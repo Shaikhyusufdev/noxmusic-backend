@@ -18,23 +18,39 @@ async def get_stream(url: str):
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-            
-            # Direct URL nikalo
+
+            # Agar playlist ya nested hai toh pehla entry lo
+            if 'entries' in info:
+                info = info['entries'][0]
+
             stream_url = None
-            if 'url' in info:
+
+            # Direct URL check karo
+            if info.get('url'):
                 stream_url = info['url']
-            elif 'formats' in info:
-                # Best audio format lo
+            
+            # Formats se best audio nikalo
+            elif info.get('formats'):
                 for f in reversed(info['formats']):
-                    if f.get('acodec') != 'none' and f.get('url'):
+                    if (f.get('acodec') != 'none' 
+                        and f.get('vcodec') == 'none' 
+                        and f.get('url')):
                         stream_url = f['url']
                         break
+                
+                # Sirf audio nahi mila toh any format lo
+                if not stream_url:
+                    for f in reversed(info['formats']):
+                        if f.get('url'):
+                            stream_url = f['url']
+                            break
 
             return {
-                "title": info.get('title', 'Unknown'),
-                "duration": info.get('duration', 0),
-                "thumbnail": info.get('thumbnail', ''),
-                "stream_url": stream_url
+                "title": str(info.get('title', 'Unknown')),
+                "duration": int(info.get('duration', 0)),
+                "thumbnail": str(info.get('thumbnail', '')),
+                "stream_url": str(stream_url) if stream_url else None
             }
+
     except Exception as e:
         return {"error": str(e)}
