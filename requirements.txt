@@ -3,4 +3,4 @@ tgcrypto
 fastapi
 uvicorn
 python-dotenv
-yt-dlp
+requests
